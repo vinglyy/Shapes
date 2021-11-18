@@ -2,7 +2,6 @@
 Zde najdete všechjny abstraktní třídy
 """
 
-
 from .Interfaces import *
 
 
@@ -87,8 +86,8 @@ class Movable(Coord, IMovable, ABC):
 
 class Resizable(Movable, Coord, ABC):
     def __init__(self, x, y, width, height):
-        Coord.__init__(self,x,y)
-        Movable.__init__(self,x,y)
+        Coord.__init__(self, x, y)
+        Movable.__init__(self, x, y)
 
         self.height = height
         self.width = width
@@ -114,6 +113,16 @@ class Resizable(Movable, Coord, ABC):
 
 
 class Paintable(ABC):
+    def __init__(self):
+        self._is_painted_on_canvas = False
+        self.paint()
+
+    @abstractmethod
+    def paint(self):
+        pass
+
+
+class Removable(ABC):
     def __init__(self):
         self._is_painted_on_canvas = False
         self.paint()

@@ -1,59 +1,59 @@
 # -*- coding: utf-8 -*-
 """
 Tohle je modul CanvasManager, jeho úkolem je vytvořit virtuální
-kanvas na , který jde zobrazit následující tvary:
+plátno na, které jde zobrazit následující tvary:
     jednoduché obrazce:
         Rectangle,
         Elipse,
         Triangle
     složitější obrazce:
         Multishape
+    a text
 Tvary mohou měnit velikost, barvu a pozici.
 Autor: Jan Lampa
-verze: 1.2 16.11.2021
+verze: 1.2 17.11.2021
 """
 import tkinter
-from abc import ABC
 
 from .Abstract_classes import *
 from .Direction8 import *
 from .NamedColor import *
 
-# o kolik skáčou tvary
+# o kolik skáčou obrazce
 canvas_step = 50
 
 
-class Text(Movable, ID, Paintable, ICopyable):
+class Text(Movable, ID, Paintable, ICopyable, IRemovable):
     """
-    Instance třídy Text. Vytvoří normální text na plátně.
+    Instance třídy Text. Vytvoří normální text na plátně. Text je možné
     """
 
     def __init__(self, x=0, y=0, text="text"):
         """
         Vytvoří instanci třídy Text.
-        :param x: defaultně 0
-        :param y: defaultně 0
-        :param text: defaultně "text"
+        :param x: x souřadnice, základně 0
+        :param y: y souřadnice, základně 0
+        :param text: text který bude vypsán, základně "text"
         """
         ID.__init__(self)
         Movable.__init__(self, x, y)
-        self.text = text
         Paintable.__init__(self)
+        self.text = text
 
     def paint(self) -> None:
         if not self._is_painted_on_canvas:
-            canvas.create_text(self.x, self.y, text=self.text, tag=self.__repr__())
+            _canvas.create_text(self.x, self.y, text=self.text, tag=self.__repr__())
             self._is_painted_on_canvas = True
         else:
-            canvas.itemconfig(self.__repr__())
-            canvas.coords(self.__repr__(), self.get_coord())
-            canvas.tag_raise(self.__repr__())
+            _canvas.itemconfig(self.__repr__())
+            _canvas.coords(self.__repr__(), self.x, self.y)
+            _canvas.tag_raise(self.__repr__())
             show_canvas()
 
     def copy(self):
         """
-        Metoda vrátí kopii tvaru
-        :return: vrácený tvar
+        Metoda vrátí kopii tvaru.
+        :return: vracená kopie tvaru
         """
         return Text(self.x, self.y, self.text)
 
@@ -65,14 +65,22 @@ class Text(Movable, ID, Paintable, ICopyable):
         self.text = text
         self.paint()
 
+    def remove(self):
+        """
+        Odstraní text z plátna. Nezničí ale objekt, takže je ho
+        možné znovu zobrazit na plátně pomocí metody paint.
+        """
+        self._is_painted_on_canvas = False
+        _canvas.delete(self.id)
 
-class Shape(Resizable, ID, Paintable, ICopyable, ABC):
+
+class Shape(Resizable, ID, Paintable, ICopyable, IRemovable, ABC):
     """
     Rodičovská implementace obrazců, slouží k tomu aby
     jsme se nemusely psát metody pro některé obrazce
     několikrát.
     Také jsou zde implementována abstraktní třída, aby
-    nešlo Shape instancovat .
+    nešlo vytvořit Shape instanci.
     """
 
     def __init__(self, x, y, width, height, color=YELLOW):
@@ -87,7 +95,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, ABC):
         :param color: barva obrazce, je třeba použít metody NamedColor
         """
         ID.__init__(self)
-        canvas.all_shapes.append(self)
+        _canvas.all_shapes.append(self)
         Resizable.__init__(self, x, y, width, height)
 
         self.color = color
@@ -97,7 +105,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, ABC):
         """
         Dočasně přebarví tvar na barvu pozadí.
         """
-        canvas.itemconfig(self.__repr__(), fill=canvas.canvas_color.tkn)
+        _canvas.itemconfig(self.__repr__(), fill=_canvas.canvas_color.tkn)
         show_canvas()
 
     def change_shape_color(self, color=None) -> None:
@@ -108,7 +116,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, ABC):
         """
         if color is not None:
             self.color = color
-        canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
+        _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
         show_canvas()
 
     def _count_corners(self) -> None:
@@ -135,7 +143,14 @@ class Shape(Resizable, ID, Paintable, ICopyable, ABC):
         return self.__repr__() + "[x =" + str(self.x) + \
                " y =" + str(self.y) + " height =" + str(self.height) \
                + " width =" + str(self.width) + " color = " + \
-               str(self.color.name) + "]"
+               str(self.color._name) + "]"  # noqa
+
+    def remove(self):
+        """
+        Odstraní tvar z plátna.
+        """
+        self._is_painted_on_canvas = False
+        _canvas.delete(self.id)
 
 
 class Ellipse(Shape):
@@ -170,19 +185,20 @@ class Ellipse(Shape):
 
     def paint(self) -> None:
         """
-        Tato metoda zavolá kanvas a pokud tvar ještě nebyl
-        vytvořen tak na něm vytvoří nový, pokud iž byl tak
-        aktualizuje tvar na kanvasu podle tagu.
+        Tato metoda zavolá plátno a pokud tvar ještě nebyl
+        vytvořen tak na něm vytvoří nový, pokud již byl tak
+        aktualizuje tvar na plátně podle atributů x,y,width,
+        height a color.
         """
         if not self._is_painted_on_canvas:
-            canvas.create_oval(self.get_coord(), tag=self.__repr__(),
-                               fill=self.color.tkn, width=0, outline="")
+            _canvas.create_oval(self.get_coord(), tag=self.__repr__(),
+                                fill=self.color.tkn, width=0, outline="")
             self._is_painted_on_canvas = True
             show_canvas()
         else:
-            canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
-            canvas.coords(self.__repr__(), self.get_coord())
-            canvas.tag_raise(self.__repr__())
+            _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
+            _canvas.coords(self.__repr__(), self.get_coord())
+            _canvas.tag_raise(self.__repr__())
             show_canvas()
 
     def copy(self) -> Shape:
@@ -224,14 +240,14 @@ class Rectangle(Shape):
         aktualizuje tvar na kanvasu podle tagu.
         """
         if not self._is_painted_on_canvas:
-            canvas.create_rectangle(self.get_coord(), tag=self.__repr__(),
-                                    fill=self.color.tkn, width=0)
+            _canvas.create_rectangle(self.get_coord(), tag=self.__repr__(),
+                                     fill=self.color.tkn, width=0)
             self._is_painted_on_canvas = True
             show_canvas()
         else:
-            canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
-            canvas.coords(self.__repr__(), self.get_coord())
-            canvas.tag_raise(self.__repr__())
+            _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
+            _canvas.coords(self.__repr__(), self.get_coord())
+            _canvas.tag_raise(self.__repr__())
             show_canvas()
 
     def copy(self) -> Shape:
@@ -281,14 +297,14 @@ class Triangle(Shape):
         aktualizuje tvar na kanvasu podle tagu.
         """
         if not self._is_painted_on_canvas:
-            canvas.create_polygon(self.get_coord(), tag=self.__repr__(),
-                                  fill=self.color.tkn, width=0)
+            _canvas.create_polygon(self.get_coord(), tag=self.__repr__(),
+                                   fill=self.color.tkn, width=0)
             self._is_painted_on_canvas = True
             show_canvas()
         else:
-            canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
-            canvas.coords(self.__repr__(), self.get_coord())
-            canvas.tag_raise(self.__repr__())
+            _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
+            _canvas.coords(self.__repr__(), self.get_coord())
+            _canvas.tag_raise(self.__repr__())
             show_canvas()
 
     def get_coord(self) -> list:
@@ -297,62 +313,63 @@ class Triangle(Shape):
         použít na plátně.
         """
         coord = [int, int, int, int, int, int]
-        if self.dir8 == N:
-            coord[0] = (self.corner_1[0] + self.corner_2[0]) / 2
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_2[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_2[1]
-        elif self.dir8 == NE:
-            coord[0] = self.corner_2[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_2[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_1[1]
-        elif self.dir8 == E:
-            coord[0] = self.corner_1[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = (self.corner_1[1] + self.corner_2[1]) / 2
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_2[1]
-        elif self.dir8 == SE:
-            coord[0] = self.corner_2[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_2[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_2[1]
-        elif self.dir8 == S:
-            coord[0] = self.corner_1[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_1[1]
-            coord[4] = (self.corner_1[0] + self.corner_2[0]) / 2
-            coord[5] = self.corner_2[1]
-        elif self.dir8 == SW:
-            coord[0] = self.corner_1[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_2[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_2[1]
-        elif self.dir8 == W:
-            coord[0] = self.corner_2[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_2[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = (self.corner_1[1] + self.corner_2[1]) / 2
-        elif self.dir8 == NW:
-            coord[0] = self.corner_1[0]
-            coord[1] = self.corner_1[1]
-            coord[2] = self.corner_2[0]
-            coord[3] = self.corner_1[1]
-            coord[4] = self.corner_1[0]
-            coord[5] = self.corner_2[1]
+        match self.dir8.short_name:
+            case "N":
+                coord[0] = (self.corner_1[0] + self.corner_2[0]) / 2
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_2[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_2[1]
+            case "NE":
+                coord[0] = self.corner_2[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_2[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_1[1]
+            case "E":
+                coord[0] = self.corner_1[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = (self.corner_1[1] + self.corner_2[1]) / 2
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_2[1]
+            case "SE":
+                coord[0] = self.corner_2[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_2[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_2[1]
+            case "S":
+                coord[0] = self.corner_1[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_1[1]
+                coord[4] = (self.corner_1[0] + self.corner_2[0]) / 2
+                coord[5] = self.corner_2[1]
+            case "SW":
+                coord[0] = self.corner_1[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_2[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_2[1]
+            case "W":
+                coord[0] = self.corner_2[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_2[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = (self.corner_1[1] + self.corner_2[1]) / 2
+            case "NW":
+                coord[0] = self.corner_1[0]
+                coord[1] = self.corner_1[1]
+                coord[2] = self.corner_2[0]
+                coord[3] = self.corner_1[1]
+                coord[4] = self.corner_1[0]
+                coord[5] = self.corner_2[1]
         return coord
 
     def set_direction(self, direction):
@@ -369,7 +386,7 @@ class Triangle(Shape):
                         self.height, self.color, self.dir8)
 
 
-class Multishape(IMovable, ABC):
+class Multishape(IMovable,IRemovable, ABC):
     """
     Instance třídy Multishape představuje komplexy geometrických
     tvarů které jsou určeny pro práci na virtuálním plátně při
@@ -395,36 +412,50 @@ class Multishape(IMovable, ABC):
         :param name: Jméno multishapu
         :param parts: tvary ktere chceme přídat
         """
-        self.name = name
+        self._name = name
         self.parts = []
-        self.x_pos = 0
-        self.y_pos = 0
-        self.height = 0
-        self.width = 0
-        self.bool = True
-        self.creation_done = False
-        self.add_shapes(parts)
+        self._x_pos = 0
+        self._y_pos = 0
+        self._height = 0
+        self._width = 0
+        self._bool = True
+        self._creation_done = False
+        self.add_shapes(*parts)
 
-    def add_shapes(self, args) -> None:
+    def add_shapes(self, *args) -> None:
         """
         Přidá kopii daných tvarů do tohoto multishapu
          a vhodně upraví jeho vnitřní pozici a velikost.
         :param args: Tvar(y) které chceme přidat
         """
-        if self.creation_done:
+        if self._creation_done:
             raise Exception("Attempt to add a shape " +
                             "after finishing the creation " +
                             "of the mutlishape ")
-        if isinstance(args, tuple):
-            for s in args:
-                self.add_shape(s.copy())
-        elif isinstance(args, Multishape):
-            for s in args.parts:
-                self.add_shape(s.shape.copy())
-        elif isinstance(args, Shape):
-            self.add_shape(args.copy())
-        else:
-            raise Exception("Wrong arguments")
+        list_of_shapes = self._flatten_nested_list_or_tuple(args)
+        for shape in list_of_shapes:
+            if isinstance(shape, Shape):
+                self.add_shape(shape)
+            elif isinstance(shape, Multishape):
+                for s in shape.parts:
+                    self.add_shape(s.shape.copy())
+            else:
+                raise Exception("Wrong arguments")
+
+    @staticmethod
+    def _flatten_nested_list_or_tuple(nested_list_or_tuple: tuple or list) -> list:
+        """
+
+        :param nested_list_or_tuple:
+        :return:
+        """
+        flat_list = []
+        for elem in nested_list_or_tuple:
+            if isinstance(elem, list or tuple):
+                flat_list.extend(Multishape._flatten_nested_list_or_tuple(elem))
+            else:
+                flat_list.append(elem)
+        return flat_list
 
     def add_shape(self, shape: Shape) -> None:
         """
@@ -435,34 +466,34 @@ class Multishape(IMovable, ABC):
         asy = shape.y
         asw = shape.width
         ash = shape.height
-        if self.bool:
-            self.x_pos = asx
-            self.y_pos = asy
-            self.width = asw
-            self.height = ash
+        if self._bool:
+            self._x_pos = asx
+            self._y_pos = asy
+            self._width = asw
+            self._height = ash
             self.parts.append(self._Part(shape, self))
-            self.bool = False
+            self._bool = False
             return
 
-        mx = self.x_pos
-        my = self.y_pos
-        ms = self.width
-        mv = self.height
+        mx = self._x_pos
+        my = self._y_pos
+        ms = self._width
+        mv = self._height
         change = False
 
-        if asx < self.x_pos:
-            self.width += self.x_pos - asx
-            self.x_pos = asx
+        if asx < self._x_pos:
+            self._width += self._x_pos - asx
+            self._x_pos = asx
             change = True
-        if asy < self.y_pos:
-            self.height += self.y_pos - asy
-            self.y_pos = asy
+        if asy < self._y_pos:
+            self._height += self._y_pos - asy
+            self._y_pos = asy
             change = True
-        if (self.x_pos + self.width) < (asx + asw):
-            self.width = asx + asw - self.x_pos
+        if (self._x_pos + self._width) < (asx + asw):
+            self._width = asx + asw - self._x_pos
             change = True
-        if (self.y_pos + self.height) < (asy + ash):
-            self.height = asy + ash - self.y_pos
+        if (self._y_pos + self._height) < (asy + ash):
+            self._height = asy + ash - self._y_pos
             change = True
         if change:
             for p in self.parts:
@@ -476,14 +507,14 @@ class Multishape(IMovable, ABC):
         """
         if len(self.parts) < 1:
             raise Exception("The multishape has to have at least one part")
-        self.creation_done = True
+        self._creation_done = True
 
     def _verify_done(self) -> None:
         """
         Ověřte, zda bylo vytvoření instance
         dokončeno pokud ne, vyhodí výjimku.
         """
-        if self.creation_done:
+        if self._creation_done:
             return
         raise Exception("Unfinished shape cannot run method")
 
@@ -509,8 +540,8 @@ class Multishape(IMovable, ABC):
             height_list.append(part.partHeight)
             """
 
-        self.width = max(1, width)
-        self.height = max(1, height)
+        self._width = max(1, width)
+        self._height = max(1, height)
         self._move_shape_on_canvas()
 
     def set_position(self, x: int, y: int) -> None:
@@ -525,32 +556,32 @@ class Multishape(IMovable, ABC):
         okraj plátna má y=0, souřadnice se zvyšuje směrem dolů.
         """
         # self.verify_done()
-        dx = x - self.x_pos
-        dy = y - self.y_pos
+        dx = x - self._x_pos
+        dy = y - self._y_pos
         for part in self.parts:
             shape = part.shape
             shape.set_position(dx + shape.x, dy + shape.y)
-        self.x_pos = x
-        self.y_pos = y
+        self._x_pos = x
+        self._y_pos = y
         self._move_shape_on_canvas()
 
     def move_right(self, length=25):
-        self.set_position(self.x_pos + length, self.y_pos)
+        self.set_position(self._x_pos + length, self._y_pos)
 
     def move_left(self, length=25):
-        self.set_position(self.x_pos - length, self.y_pos)
+        self.set_position(self._x_pos - length, self._y_pos)
 
     def move_up(self, length=25):
-        self.set_position(self.x_pos, self.y_pos - length)
+        self.set_position(self._x_pos, self._y_pos - length)
 
     def move_down(self, length=25):
-        self.set_position(self.x_pos, self.y_pos + length)
+        self.set_position(self._x_pos, self._y_pos + length)
 
     def set_x(self, x: int):
-        self.set_position(x, self.y_pos)
+        self.set_position(x, self._y_pos)
 
     def set_y(self, y: int):
-        self.set_position(self.x_pos, y)
+        self.set_position(self._x_pos, y)
 
     def _create_shape_on_canvas(self) -> None:
         """
@@ -558,21 +589,21 @@ class Multishape(IMovable, ABC):
         """
         for part in self.parts:
             if isinstance(part.part, Rectangle):
-                canvas.create_rectangle(part.part.get_coord(), fill=part.part.color.tkn,
-                                        tag=part.part.__repr__() + "multi", width=0)
+                _canvas.create_rectangle(part.part.get_coord(), fill=part.part.color.tkn,
+                                         tag=part.part.__repr__() + "multi", width=0)
             elif isinstance(part.part, Ellipse):
-                canvas.create_oval(part.part.get_coord(), fill=part.part.color.tkn,
-                                   tag=part.part.__repr__() + "multi", width=0)
+                _canvas.create_oval(part.part.get_coord(), fill=part.part.color.tkn,
+                                    tag=part.part.__repr__() + "multi", width=0)
             elif isinstance(part.part, Triangle):
-                canvas.create_polygon(part.part.get_coord(), fill=part.part.color.tkn,
-                                      tag=part.part.__repr__() + "multi")
+                _canvas.create_polygon(part.part.get_coord(), fill=part.part.color.tkn,
+                                       tag=part.part.__repr__() + "multi")
 
     def _move_shape_on_canvas(self) -> None:
         """
         Pohne postupně každým tvarem v multishapu.
         """
         for part in self.parts:
-            canvas.coords(part.shape.__repr__() + "multi", part.shape.get_coord())
+            _canvas.coords(part.shape.__repr__() + "multi", part.shape.get_coord())
 
     class _Part:
         """
@@ -584,7 +615,7 @@ class Multishape(IMovable, ABC):
             """
             Vytvoří objekt a zapamatuje si aktuální
             podíly daného tvaru v aktuálním stavu multishape.
-            :param part: zabaleny tvar
+            :param part: zabalený tvar
             :param outer_self: python je hloupen a nejde dostat
             atributy vnější třídy z vnitřní třídy, proto
             to musíme takhle obcházet
@@ -596,19 +627,19 @@ class Multishape(IMovable, ABC):
             part_width = part.width
             part_height = part.height
             try:
-                self.dx = (self.partX - self.outer_self.x_pos) / float(self.outer_self.width)
+                self.dx = (self.partX - self.outer_self._x_pos) / float(self.outer_self._width)  # noqa
             except ZeroDivisionError:
                 self.dx = 0.0
             try:
-                self.dy = (self.partY - self.outer_self.y_pos) / float(self.outer_self.height)
+                self.dy = (self.partY - self.outer_self._y_pos) / float(self.outer_self._height)  # noqa
             except ZeroDivisionError:
                 self.dy = 0.0
             try:
-                self.dw = part_width / float(self.outer_self.width)
+                self.dw = part_width / float(self.outer_self._width)  # noqa
             except ZeroDivisionError:
                 self.dw = 0.0
             try:
-                self.dh = part_height / float(self.outer_self.height)
+                self.dh = part_height / float(self.outer_self._height)  # noqa
             except ZeroDivisionError:
                 self.dh = 0.0
 
@@ -622,11 +653,11 @@ class Multishape(IMovable, ABC):
             :param ow: originální šířka
             :param oh: originální výška
             """
-            self.dx = (ox - self.outer_self.x_pos * ow) / self.outer_self.width
-            self.dy = (oy - self.outer_self.y_pos * oh) / self.outer_self.height
+            self.dx = (ox - self.outer_self._x_pos * ow) / self.outer_self._width  # noqa
+            self.dy = (oy - self.outer_self._y_pos * oh) / self.outer_self._height  # noqa
 
-            self.dw = self.dw * ow / self.outer_self.width
-            self.dh = self.dh * oh / self.outer_self.height
+            self.dw = self.dw * ow / self.outer_self._width  # noqa
+            self.dh = self.dh * oh / self.outer_self._height  # noqa
 
         def after_resizing(self, width: int, height: int) -> None:
             """
@@ -635,9 +666,9 @@ class Multishape(IMovable, ABC):
             :param width: šířka celého multitvaru
             :param height: výška celého multitvaru
             """
-            self.shape.set_position(int(round(self.outer_self.x_pos +
+            self.shape.set_position(int(round(self.outer_self._x_pos +  # noqa
                                               self.dx * width)),
-                                    int(round(self.outer_self.y_pos +
+                                    int(round(self.outer_self._y_pos +  # noqa
                                               self.dy * height)))
             self.shape.set_size(int(round(self.dw * width)),
                                 int(round(self.dh * height)))
@@ -648,8 +679,8 @@ class Canvas(tkinter.Canvas):
     Třída za kterou je prohlášen Canvas(plátno), je zároveň i kořenem.
     """
 
-    def __init__(self, canvas_color=CREAMY, canvas_width=600, canvas_height=600
-                 , pos_x=100, pos_y=100):
+    def __init__(self, canvas_color=CREAMY, canvas_width=600, canvas_height=600,
+                 pos_x=100, pos_y=100):
         tkinter.Canvas.__init__(self)
         self.master.title("Plátno")
         self.master.geometry("+%d+%d" % (pos_x, pos_y))
@@ -690,12 +721,45 @@ class Canvas(tkinter.Canvas):
         :param bg_color: nová barva
         """
         self.canvas_color = bg_color
-        canvas.config(bg=self.canvas_color.tkn)
-        canvas.update()
+        _canvas.config(bg=self.canvas_color.tkn)
+        _canvas.update()
 
     def show_canvas(self) -> None:
         """
-        aktualizuje tvary na plátně
+        Aktualizuje tvary na plátně.
         """
         self.update()
 
+
+# Vytvoří canvas
+_canvas = Canvas()
+
+
+def change_canvas_size(height: int, width: int) -> None:
+    """
+    Změní výšku a šířku plátna
+    :param height: výška
+    :param width: šířka
+    """
+    _canvas.change_canvas_size(height, width)
+
+
+def change_canvas_color(bg_color) -> None:
+    """
+    Změní barvu plátna
+    :param bg_color: nová barva
+    """
+    change_canvas_color(bg_color)
+
+
+def show_canvas() -> None:
+    """Zkratka"""
+    _canvas.show_canvas()
+
+
+def mainloop() -> None:
+    """
+    Tuto metodu je třeba použít na konec scriptu pokud chcete,
+    aby okno zůstalo po vykonání skriptu.
+    """
+    _canvas.mainloop()

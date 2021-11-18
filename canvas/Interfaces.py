@@ -10,6 +10,12 @@ class ICopyable(ABC):
         """Vrátí kopii instance"""
 
 
+class IRemovable(ABC):
+    @abstractmethod
+    def remove(self):
+        """Odstraní objekt z plátna"""
+
+
 class IMovable(ABC):
     @abstractmethod
     def set_x(self, x: int):

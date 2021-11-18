@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from canvas import *
-
+import canvas
 """
 e = canvas.Ellipse(50, 200, 150, 80)
 r.move_up(50)
@@ -54,17 +53,24 @@ canvas.canvas.itemconfig("Ellipse5", fill="black")
 for i in canvas.canvas.find_all():
     print(canvas.canvas.gettags(i),i)
 """
-canvas.change_canvas_size(300, 300)
-m1 = Multishape("m1", Rectangle(), Ellipse(10,10,80,35), Triangle())
+canvas.change_canvas_size(400, 400)
+m1 = canvas.Multishape("m1", canvas.Rectangle(), canvas.Ellipse(10,10,80,35), canvas.Triangle())
 m1.creation_is_done()
-m2 = Multishape("m2")
+m2 = canvas.Multishape("m2")
 m2.add_shapes(m1)
-m1.set_size(120, 30)
-m1.set_position(100, 75)
-m2.add_shapes(m1)
-m1.set_size(20,20)
-m1.set_position(150, 100)
+m1.move_down()
+
 m2.creation_is_done()
+
+m2.move_right(100)
+m2.set_size(60,20)
+m3 = canvas.Multishape("m3",m2)
+m3.move_down(100)
+m3.creation_is_done()
+m3.set_size(20,60)
+text = canvas.Text(50,50)
+text.set_text("adfadgdag")
+
 """
 
 canvas.change_canvas_size(500, 300)
@@ -81,4 +87,4 @@ robot = Multishape("robot", cap, head,
                    leftWheel, rightWheel)
 robot.move_right(200)
 """
-done()
+canvas.mainloop()
