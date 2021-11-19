@@ -27,19 +27,6 @@ class Coord(ABC):
 
 
 class Movable(Coord, IMovable, ABC):
-    def set_x(self, x: int) -> None:
-        """
-        Změna coordinát
-        :param x:
-        """
-        self.x = x
-        self._count_corners()
-        self.paint()
-
-    def set_y(self, y: int) -> None:
-        self.y = y
-        self._count_corners()
-        self.paint()
 
     def move_up(self, length=25) -> None:
         """

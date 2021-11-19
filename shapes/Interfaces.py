@@ -17,15 +17,6 @@ class IRemovable(ABC):
 
 
 class IMovable(ABC):
-    @abstractmethod
-    def set_x(self, x: int):
-        """
-        Změna souřadnice x.
-        """
-
-    @abstractmethod
-    def set_y(self, y: int):
-        """Změna souřadnice y."""
 
     @abstractmethod
     def move_up(self, length=25):

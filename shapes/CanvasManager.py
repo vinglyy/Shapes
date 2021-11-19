@@ -25,7 +25,12 @@ canvas_step = 50
 
 class Text(Movable, ID, Paintable, ICopyable, IRemovable):
     """
-    Instance třídy Text. Vytvoří normální text na plátně. Text je možné
+    Instance třídy Text. Vytvoří normální text na plátně.
+    Text je možné:
+        posouvat,
+        změnit text
+        okopírovat
+        odstranit z plátna
     """
 
     def __init__(self, x=0, y=0, text="text"):
@@ -41,6 +46,11 @@ class Text(Movable, ID, Paintable, ICopyable, IRemovable):
         self.text = text
 
     def paint(self) -> None:
+        """
+        Metoda paint vytvoří tvar na plátně, pokud není vytvořen.
+        Pokud je pouze aktualizuje stav tvaru na plátně podle
+        atributů třídy.
+        """
         if not self._is_painted_on_canvas:
             _canvas.create_text(self.x, self.y, text=self.text, tag=self.__repr__())
             self._is_painted_on_canvas = True
@@ -48,7 +58,7 @@ class Text(Movable, ID, Paintable, ICopyable, IRemovable):
             _canvas.itemconfig(self.__repr__())
             _canvas.coords(self.__repr__(), self.x, self.y)
             _canvas.tag_raise(self.__repr__())
-            show_canvas()
+            _canvas.show_canvas()
 
     def copy(self):
         """
@@ -106,7 +116,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, IRemovable, ABC):
         Dočasně přebarví tvar na barvu pozadí.
         """
         _canvas.itemconfig(self.__repr__(), fill=_canvas.canvas_color.tkn)
-        show_canvas()
+        _canvas.show_canvas()
 
     def change_shape_color(self, color=None) -> None:
         """
@@ -117,7 +127,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, IRemovable, ABC):
         if color is not None:
             self.color = color
         _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
-        show_canvas()
+        _canvas.show_canvas()
 
     def _count_corners(self) -> None:
         """
@@ -194,12 +204,12 @@ class Ellipse(Shape):
             _canvas.create_oval(self.get_coord(), tag=self.__repr__(),
                                 fill=self.color.tkn, width=0, outline="")
             self._is_painted_on_canvas = True
-            show_canvas()
+            _canvas.show_canvas()
         else:
             _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
             _canvas.coords(self.__repr__(), self.get_coord())
             _canvas.tag_raise(self.__repr__())
-            show_canvas()
+            _canvas.show_canvas()
 
     def copy(self) -> Shape:
         return Ellipse(self.x, self.y, self.width, self.height, self.color)
@@ -235,20 +245,20 @@ class Rectangle(Shape):
 
     def paint(self) -> None:
         """
-        Tato metoda zavolá kanvas a pokud tvar ještě nebyl
-        vytvořen tak na něm vytvoří nový, pokud iž byl tak
-        aktualizuje tvar na kanvasu podle tagu.
+        Metoda paint vytvoří tvar na plátně, pokud není vytvořen.
+        Pokud je pouze aktualizuje stav tvaru na plátně podle
+        atributů třídy.
         """
         if not self._is_painted_on_canvas:
             _canvas.create_rectangle(self.get_coord(), tag=self.__repr__(),
                                      fill=self.color.tkn, width=0)
             self._is_painted_on_canvas = True
-            show_canvas()
+            _canvas.show_canvas()
         else:
             _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
             _canvas.coords(self.__repr__(), self.get_coord())
             _canvas.tag_raise(self.__repr__())
-            show_canvas()
+            _canvas.show_canvas()
 
     def copy(self) -> Shape:
         return Rectangle(self.x, self.y, self.width, self.height, self.color)
@@ -292,24 +302,24 @@ class Triangle(Shape):
 
     def paint(self) -> None:
         """
-        Tato metoda zavolá kanvas a pokud tvar ještě nebyl
-        vytvořen tak na něm vytvoří nový, pokud iž byl tak
-        aktualizuje tvar na kanvasu podle tagu.
+        Metoda paint vytvoří tvar na plátně, pokud není vytvořen.
+        Pokud je pouze aktualizuje stav tvaru na plátně podle
+        atributů třídy.
         """
         if not self._is_painted_on_canvas:
             _canvas.create_polygon(self.get_coord(), tag=self.__repr__(),
                                    fill=self.color.tkn, width=0)
             self._is_painted_on_canvas = True
-            show_canvas()
+            _canvas.show_canvas()
         else:
             _canvas.itemconfig(self.__repr__(), fill=self.color.tkn)
             _canvas.coords(self.__repr__(), self.get_coord())
             _canvas.tag_raise(self.__repr__())
-            show_canvas()
+            _canvas.show_canvas()
 
     def get_coord(self) -> list:
         """
-        Propočítá body tak aby jsme dostaly výstup, který můžeme
+        Přepočítá body tak aby jsme dostaly výstup, který můžeme
         použít na plátně.
         """
         coord = [int, int, int, int, int, int]
@@ -386,7 +396,7 @@ class Triangle(Shape):
                         self.height, self.color, self.dir8)
 
 
-class Multishape(IMovable,IRemovable, ABC):
+class Multishape(IMovable, IRemovable, ABC):
     """
     Instance třídy Multishape představuje komplexy geometrických
     tvarů které jsou určeny pro práci na virtuálním plátně při
@@ -445,22 +455,25 @@ class Multishape(IMovable,IRemovable, ABC):
     @staticmethod
     def _flatten_nested_list_or_tuple(nested_list_or_tuple: tuple or list) -> list:
         """
-
-        :param nested_list_or_tuple:
-        :return:
+        Metoda z vnořených listů nebo N-tic(tuple) tvarů vytvoří
+        jednoduchý list tvarů.
+        :param nested_list_or_tuple: list nebo N-tice
+        :return: vrátí zploštělý list s tvary
         """
         flat_list = []
-        for elem in nested_list_or_tuple:
-            if isinstance(elem, list or tuple):
-                flat_list.extend(Multishape._flatten_nested_list_or_tuple(elem))
+        for element in nested_list_or_tuple:
+            if isinstance(element, list or tuple):
+                flat_list.extend(Multishape._flatten_nested_list_or_tuple(element))
+            elif isinstance(element, Shape or Multishape):
+                flat_list.append(element)
             else:
-                flat_list.append(elem)
+                raise Exception("Unknown shape was attempted to be added to multishape")
         return flat_list
 
     def add_shape(self, shape: Shape) -> None:
         """
         Přidá zadaný tvar do multishapu a vhodně upraví jeho polohu a velikost.
-        :param shape: tvar který chceme přidat
+        :param shape: tvar se má přidat do multishapu
         """
         asx = shape.x
         asy = shape.y
@@ -677,10 +690,19 @@ class Multishape(IMovable,IRemovable, ABC):
 class Canvas(tkinter.Canvas):
     """
     Třída za kterou je prohlášen Canvas(plátno), je zároveň i kořenem.
+    Tato třída je vytvořena při importování balíčku shapes.
     """
 
     def __init__(self, canvas_color=CREAMY, canvas_width=600, canvas_height=600,
                  pos_x=100, pos_y=100):
+        """
+        Vytvoří instanci plátna.
+        :param canvas_color: Barva pozadí plátna
+        :param canvas_width: Šířka plátna
+        :param canvas_height: Výška plátna
+        :param pos_x: Pozice x kde bude okno vytvořeno
+        :param pos_y: Pozice y kde bude okno vytvořeno
+        """
         tkinter.Canvas.__init__(self)
         self.master.title("Plátno")
         self.master.geometry("+%d+%d" % (pos_x, pos_y))
@@ -717,7 +739,7 @@ class Canvas(tkinter.Canvas):
 
     def change_canvas_color(self, bg_color) -> None:
         """
-        Změní barvu plátna
+        Změní barvu pozadí plátna.
         :param bg_color: nová barva
         """
         self.canvas_color = bg_color
@@ -731,7 +753,7 @@ class Canvas(tkinter.Canvas):
         self.update()
 
 
-# Vytvoří canvas
+# Vytvoří shapes
 _canvas = Canvas()
 
 
@@ -750,11 +772,6 @@ def change_canvas_color(bg_color) -> None:
     :param bg_color: nová barva
     """
     change_canvas_color(bg_color)
-
-
-def show_canvas() -> None:
-    """Zkratka"""
-    _canvas.show_canvas()
 
 
 def mainloop() -> None:
