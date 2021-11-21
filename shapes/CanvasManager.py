@@ -99,7 +99,7 @@ class Shape(Resizable, ID, Paintable, ICopyable, IRemovable, ABC):
         x a y jsou v pravém horním rohu.
         Také počítá id, každý obrazec má svoje číslo
         :param x: osa x
-        :param y: osa y, nahoru je méně, dolu je výce
+        :param y: osa y, nahoru je méně, dolu je více
         :param width: šířka obrazce
         :param height: výška obrazce
         :param color: barva obrazce, je třeba použít metody NamedColor
@@ -183,13 +183,13 @@ class Ellipse(Shape):
         defaultně 0
         :param y: Svislá souřadnice, horní okraj plátna má y=0,
         souřadnice se zvyšuje směrem dolů.
-        defaultně 0
+        základně 0
         :param width: šířka instance
-        defaultně 50(2 * canvas_step)
+        základně 50(2 * canvas_step)
         :param height: výška instance
-        defaultně 25 canvas_step
+        základně 25 canvas_step
         :param color: barva instance
-        defaulně BLUE
+        základně BLUE
         """
         super().__init__(x, y, width, height, color)
 
@@ -230,16 +230,16 @@ class Rectangle(Shape):
         Vytvoří novou instanci Rectangle
         :param x: Vodorovná souřadnice, levý okraj plátna má x=0,
         souřadnice se zvětšuje směrem doprava.
-        defaultně 0
+        základně 0
         :param y: Svislá souřadnice, horní okraj plátna má y=0,
         souřadnice se zvyšuje směrem dolů.
-        defaultně 0
+        základně 0
         :param width: šířka instance
-        defaultně 50(2 * canvas_step)
+        základně 50(2 * canvas_step)
         :param height: výška instance
-        defaultně 25 canvas_step
+        základně 25 canvas_step
         :param color: barva instance
-        defaultně RED
+        základně RED
         """
         super().__init__(x, y, width, height, color)
 
@@ -284,18 +284,18 @@ class Triangle(Shape):
         Vytvoří novou instanci Triangle
         :param x: Vodorovná souřadnice, levý okraj plátna má x=0,
         souřadnice se zvětšuje směrem doprava.
-        defaultně 0
+        základně 0
         :param y: Svislá souřadnice, horní okraj plátna má y=0,
         souřadnice se zvyšuje směrem dolů.
-        defaultně 0
+        základně 0
         :param width: šířka instance
-        defaultně 50(2 * canvas_step)
+        základně 50(2 * canvas_step)
         :param height: výška instance
-        defaultně 25 canvas_step
+        základně 25 canvas_step
         :param color: barva instance
-        defaulně YELLOW
+        základně YELLOW
         :param dir8: Směr, kterým je natočen hlavní vrchol.
-        defaultně NORTH
+        základně NORTH
         """
         self.dir8 = dir8
         super().__init__(x, y, width, height, color)
@@ -420,7 +420,7 @@ class Multishape(IMovable, IRemovable, ABC):
         daných objektů, které jsou předány k vytvoření.
         objekty.
         :param name: Jméno multishapu
-        :param parts: tvary ktere chceme přídat
+        :param parts: tvary, které chceme přidat
         """
         self._name = name
         self.parts = []
@@ -428,7 +428,7 @@ class Multishape(IMovable, IRemovable, ABC):
         self._y_pos = 0
         self._height = 0
         self._width = 0
-        self._bool = True
+        self._first_shape = True
         self._creation_done = False
         self.add_shapes(*parts)
 
@@ -479,13 +479,13 @@ class Multishape(IMovable, IRemovable, ABC):
         asy = shape.y
         asw = shape.width
         ash = shape.height
-        if self._bool:
+        if self._first_shape:
             self._x_pos = asx
             self._y_pos = asy
             self._width = asw
             self._height = ash
             self.parts.append(self._Part(shape, self))
-            self._bool = False
+            self._first_shape = False
             return
 
         mx = self._x_pos
