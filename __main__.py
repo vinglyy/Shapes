@@ -53,6 +53,7 @@ shapes.shapes.itemconfig("Ellipse5", fill="black")
 for i in shapes.shapes.find_all():
     print(shapes.shapes.gettags(i),i)
 """
+
 shapes.change_canvas_size(400, 400)
 m1 = shapes.Multishape("m1", shapes.Rectangle(), shapes.Ellipse(10, 10, 80, 35), shapes.Triangle())
 m1.creation_is_done()
