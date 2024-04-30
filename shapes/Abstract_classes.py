@@ -7,6 +7,7 @@ from .Interfaces import *
 
 class ID(ABC):
     _counter = 0
+    canvas_id: int
 
     def __init__(self):
         ID._counter += 1
@@ -70,6 +71,12 @@ class Movable(Coord, IMovable, ABC):
         self._count_corners()
         self.paint()
 
+    def _count_corners(self):
+        pass
+
+    def paint(self):
+        pass
+
 
 class Resizable(Movable, Coord, ABC):
     def __init__(self, x, y, width, height):
@@ -97,6 +104,9 @@ class Resizable(Movable, Coord, ABC):
         self.height = height
         self._count_corners()
         self.paint()
+
+    def paint(self):
+        pass
 
 
 class Paintable(ABC):
